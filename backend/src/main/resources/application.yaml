@@ -1,14 +1,14 @@
 # 服务端口
 server:
-  port: 8080
+  port: 8081
 
 # 数据库配置
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/your_database?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/graduation_design?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=TRUE&useSSL=FALSE
     username: root
-    password: root
+    password: zn.898824
 
 # MyBatis-Plus配置
 mybatis-plus:
@@ -23,4 +23,11 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+# JWT配置
+jwt:
+  # JWT加解密使用的密钥
+  secret: graduation-design-jwt-secret-key
+  # JWT的有效期（单位：秒）
+  expiration: 86400
 
