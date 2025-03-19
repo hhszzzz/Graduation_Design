@@ -16,6 +16,7 @@ spring:
     username: root
     password: zn.898824
 
+
 # MyBatis-Plus配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

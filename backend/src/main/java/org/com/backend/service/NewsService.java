@@ -7,7 +7,8 @@ import java.util.List;
 public interface NewsService {
 
     // 调用Python API并存储到数据库
-    public void scheduledCrawlTask();
+    public void autoCrawlTask();
 
-    public List<News> listAllNews();
+    // 根据类型获取新闻列表
+    List<News> listNewsByType(String type);
 }
