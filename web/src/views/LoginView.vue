@@ -71,15 +71,22 @@ export default {
       loginFormRef.value.validate(valid => {
         if (valid) {
           loading.value = true
-          store.dispatch('login', loginForm).then(() => {
-            ElMessage.success('登录成功')
-            // 跳转到首页
-            router.push('/home')
-          }).catch(error => {
-            ElMessage.error(error.message || '登录失败')
-          }).finally(() => {
-            loading.value = false
-          })
+          store.dispatch('login', loginForm)
+            .then(() => {
+              // 登录成功后获取用户信息
+              return store.dispatch('getUserInfo')
+            })
+            .then(() => {
+              ElMessage.success('登录成功')
+              // 跳转到首页
+              router.push('/home')
+            })
+            .catch(error => {
+              ElMessage.error(error.message || '登录失败')
+            })
+            .finally(() => {
+              loading.value = false
+            })
         }
       })
     }

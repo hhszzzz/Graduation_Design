@@ -20,22 +20,50 @@
 <script>
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import { onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { onMounted, ref } from 'vue'
+import { ElMessage, ElLoading } from 'element-plus'
 
 export default {
   name: 'App',
   setup() {
     const store = useStore()
     const router = useRouter()
+    const isLoading = ref(false)
 
     // 在组件挂载时获取用户信息
-    onMounted(() => {
-      if (store.getters.isAuthenticated && !store.getters.getUser) {
-        store.dispatch('getUserInfo').catch(() => {
-          ElMessage.error('登录已过期，请重新登录')
+    onMounted(async () => {
+      const token = localStorage.getItem('token')
+      
+      // 如果localStorage中有token但Vuex中没有用户信息，则尝试获取用户信息
+      if (token && !store.getters.getUser) {
+        // 验证token格式
+        if (!token.startsWith('Bearer ') || !token.includes('.')) {
+          // token格式不正确，直接清除并跳转登录页
+          store.dispatch('logout')
           router.push('/login')
+          return
+        }
+        
+        const loading = ElLoading.service({
+          lock: true,
+          text: '加载中...',
+          background: 'rgba(0, 0, 0, 0.7)'
         })
+        
+        isLoading.value = true
+        
+        try {
+          await store.dispatch('getUserInfo')
+        } catch (error) {
+          console.error('获取用户信息失败', error)
+          // 清除token并跳转到登录页
+          store.dispatch('logout')
+          router.push('/login')
+          ElMessage.error('登录已过期，请重新登录')
+        } finally {
+          loading.close()
+          isLoading.value = false
+        }
       }
     })
 
@@ -47,6 +75,7 @@ export default {
     }
 
     return {
+      isLoading,
       handleLogout
     }
   }

@@ -12,7 +12,12 @@ service.interceptors.request.use(
     // 如果存在token，请求携带token
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers['Authorization'] = 'Bearer ' + token;
+      // 检查token是否已包含Bearer前缀
+      if (token.startsWith('Bearer ')) {
+        config.headers['Authorization'] = token;
+      } else {
+        config.headers['Authorization'] = 'Bearer ' + token;
+      }
     }
     return config;
   },
@@ -26,16 +31,35 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     const res = response.data;
-    // 如果响应成功
-    if (res.code === 200) {
-      return res;
-    } else {
-      // 处理错误
-      return Promise.reject(new Error(res.message || 'Error'));
+    // 处理不同的响应格式
+    if (res === null || res === undefined) {
+      return Promise.reject(new Error('响应数据为空'));
     }
+    
+    // 如果是数组类型，直接返回
+    if (Array.isArray(res)) {
+      return { data: res, code: 200 };
+    }
+    
+    // 如果是对象类型且有code字段
+    if (typeof res === 'object' && res.code !== undefined) {
+      if (res.code === 200) {
+        return res;
+      } else {
+        return Promise.reject(new Error(res.message || '请求失败'));
+      }
+    }
+    
+    // 其他情况直接返回数据
+    return { data: res, code: 200 };
   },
   error => {
-    console.log('err' + error);
+    console.log('err', error);
+    // 如果是401错误，可能是token过期
+    if (error.response && error.response.status === 401) {
+      // 清除本地token
+      localStorage.removeItem('token');
+    }
     return Promise.reject(error);
   }
 );

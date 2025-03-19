@@ -42,7 +42,13 @@ export default createStore({
     async login({ commit }, loginData) {
       try {
         const res = await login(loginData)
-        commit('SET_TOKEN', res.data.token)
+        // 确保token格式正确
+        let token = res.data.token
+        // 如果后端返回的token没有Bearer前缀，手动添加
+        if (res.data.tokenHead && !token.startsWith(res.data.tokenHead)) {
+          token = res.data.tokenHead + ' ' + token
+        }
+        commit('SET_TOKEN', token)
         return res
       } catch (error) {
         console.error('登录失败', error)

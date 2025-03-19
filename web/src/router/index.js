@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
 const routes = [
@@ -33,13 +33,18 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes
 })
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
+  
+  // 如果token无效或格式错误，清除token
+  if (token && (!token.startsWith('Bearer ') && !token.includes('.'))) {
+    localStorage.removeItem('token')
+  }
   
   // 需要登录的页面，但没有token
   if (to.matched.some(record => record.meta.requiresAuth) && !token) {
