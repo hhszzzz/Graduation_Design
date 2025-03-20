@@ -22,7 +22,7 @@ public interface NewsMapper extends BaseMapper<News> {
                                 @Param("publishTime") LocalDateTime publishTime);
 
     @Select("<script>" +
-            "SELECT * FROM ${tableName}" +
+            "SELECT * FROM ${tableName} order by publish_time DESC " +
             "</script>")
     List<News> selectListByType(@Param("tableName") String tableName);
 }

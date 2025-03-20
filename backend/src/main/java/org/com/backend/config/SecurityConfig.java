@@ -51,6 +51,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 ).permitAll()
                 .antMatchers("/api/auth/login", "/api/auth/register") // 允许登录和注册
                 .permitAll()
+                .antMatchers(HttpMethod.GET, "/api/ai/summarize") // 允许未授权访问AI总结API
+                .permitAll()
                 .anyRequest() // 除了上面的请求，其它请求都需要鉴权
                 .authenticated();
         

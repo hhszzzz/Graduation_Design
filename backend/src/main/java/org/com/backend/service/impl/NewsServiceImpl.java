@@ -33,9 +33,8 @@ public class NewsServiceImpl implements NewsService {
     @Resource
     private UrlMatchSqlUtil urlMatchSqlUtil;
 
-    // 定时任务：每30分钟请求一次Python爬虫服务
+    // 定时任务：每小时请求一次Python爬虫服务
     @Override
-    // 每小时执行一次
     @Scheduled(cron = "0 0 * * * ?")
     public void autoCrawlTask() {
         System.out.println("自动爬虫任务启动...");
@@ -77,7 +76,7 @@ public class NewsServiceImpl implements NewsService {
         System.out.println("自动爬虫任务完成！");
     }
 
-    // 兼容多种时间格式（包含有秒和无秒的情况）
+    // 兼容多种时间格式（包含有分秒和无分秒的情况）
     private LocalDateTime parseTime(String timeStr) {
         DateTimeFormatter formatterWithSeconds = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         DateTimeFormatter formatterWithoutTime = DateTimeFormatter.ofPattern("yyyy-MM-dd");

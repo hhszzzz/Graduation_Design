@@ -2,6 +2,7 @@
 server:
   port: 8081
 
+
 # 数据库配置
 spring:
   task:
@@ -37,4 +38,19 @@ jwt:
   secret: graduation-design-jwt-secret-key
   # JWT的有效期（单位：秒）
   expiration: 86400
+
+# 爬虫服务配置
+crawler:
+  base-url: http://127.0.0.1:9999
+
+# AI服务配置
+ai:
+  deepseek:
+    api-key: sk-5b5f00bcaf924b4f965cb8d0486ba187
+    base-url: https://api.deepseek.com
+  model: deepseek-chat
+
+# 应用基础URL
+app:
+  base-url: http://localhost:8081
 
