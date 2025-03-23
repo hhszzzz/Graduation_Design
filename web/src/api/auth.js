@@ -57,8 +57,12 @@ service.interceptors.response.use(
     console.log('err', error);
     // 如果是401错误，可能是token过期
     if (error.response && error.response.status === 401) {
-      // 清除本地token
+      // 清除本地token和登录状态
       localStorage.removeItem('token');
+      // 如果使用了store，也可以清除store中的状态
+      if (window.$store) {
+        window.$store.commit('CLEAR_AUTH');
+      }
     }
     return Promise.reject(error);
   }

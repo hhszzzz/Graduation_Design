@@ -11,7 +11,9 @@ export default createStore({
     // 获取用户信息
     getUser: state => state.user,
     // 判断是否已登录
-    isAuthenticated: state => state.isAuthenticated
+    isAuthenticated: state => state.isAuthenticated,
+    // 添加isLoggedIn getter，确保与UserProfileView中使用的名称一致
+    isLoggedIn: state => state.isAuthenticated && !!state.token
   },
   mutations: {
     // 设置token

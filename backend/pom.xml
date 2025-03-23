@@ -90,8 +90,8 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>org.com.backend.BackendApplication</mainClass>
-                    <skip>true</skip>
+                    <mainClass>org.com.BackendApplication</mainClass>
+<!--                    <skip>true</skip>-->
                 </configuration>
                 <executions>
                     <execution>

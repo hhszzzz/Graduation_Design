@@ -16,12 +16,13 @@ spring:
     url: jdbc:mysql://localhost:3306/graduation_design?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=TRUE&useSSL=FALSE
     username: root
     password: zn.898824
-
+    hikari:
+      connection-timeout: 30000
 
 # MyBatis-Plus配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
-  type-aliases-package: org.com.backend.entity
+  type-aliases-package: org.com.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
@@ -41,7 +42,7 @@ jwt:
 
 # 爬虫服务配置
 crawler:
-  base-url: http://127.0.0.1:9999
+  base-url: http://localhost:9999
 
 # AI服务配置
 ai:
@@ -53,4 +54,10 @@ ai:
 # 应用基础URL
 app:
   base-url: http://localhost:8081
+
+# 新闻CSV导出配置
+news:
+  csv:
+    export:
+      path: ./data/news_export
 

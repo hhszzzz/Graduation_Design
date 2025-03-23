@@ -2,11 +2,33 @@
   <div id="app">
     <el-container v-if="$store.getters.isAuthenticated">
       <el-header>
-        <el-menu mode="horizontal" :router="true" class="nav-menu">
+        <el-menu mode="horizontal" :router="true" class="nav-menu" :ellipsis="false">
           <el-menu-item index="/">首页</el-menu-item>
           <el-menu-item index="/about">关于</el-menu-item>
           <div class="flex-grow"></div>
-          <el-menu-item @click="handleLogout">退出登录</el-menu-item>
+          <!-- User profile dropdown -->
+          <div class="user-dropdown" v-if="user">
+            <el-dropdown trigger="click">
+              <div class="user-dropdown-link">
+                <el-avatar :size="32" icon="el-icon-user">{{ user.username.charAt(0) }}</el-avatar>
+                <span class="username">{{ user.username }}</span>
+                <el-icon><ArrowDown /></el-icon>
+              </div>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item>
+                    <span>{{ user.email }}</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item divided>
+                    <router-link to="/profile" class="dropdown-link">个人主页</router-link>
+                  </el-dropdown-item>
+                  <el-dropdown-item divided @click="handleLogout">
+                    <span>退出登录</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
         </el-menu>
       </el-header>
       <el-main>
@@ -20,15 +42,20 @@
 <script>
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 
 export default {
   name: 'App',
+  components: {
+    ArrowDown
+  },
   setup() {
     const store = useStore()
     const router = useRouter()
     const isLoading = ref(false)
+    const user = computed(() => store.getters.getUser)
 
     // 在组件挂载时获取用户信息
     onMounted(async () => {
@@ -75,6 +102,7 @@ export default {
     }
 
     return {
+      user,
       isLoading,
       handleLogout
     }
@@ -113,5 +141,40 @@ export default {
 .el-main {
   background-color: #f5f7fa;
   padding: 20px;
+}
+
+/* User dropdown styles */
+.user-dropdown {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 15px;
+}
+
+.user-dropdown-link {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 20px;
+  transition: all 0.3s;
+  background-color: #f5f7fa;
+}
+
+.user-dropdown-link:hover {
+  background-color: #ecf5ff;
+}
+
+.username {
+  margin: 0 8px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.dropdown-link {
+  text-decoration: none;
+  color: #303133;
+  display: block;
+  width: 100%;
 }
 </style>
