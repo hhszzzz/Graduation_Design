@@ -6,7 +6,13 @@
         <el-skeleton :rows="5" animated />
       </div>
       <el-empty v-else-if="recommendedNews.length === 0" description="暂无推荐新闻" />
-      <div v-else class="news-item" v-for="(news, index) in recommendedNews" :key="index" @click="viewNewsDetail(news)">
+      <div 
+        v-else
+        v-for="(news, index) in recommendedNews" 
+        :key="index"
+        class="news-item"
+        @click="goToNewsDetail(news)"
+      >
         <div class="news-title text-ellipsis">{{ news.title }}</div>
         <div class="news-time">{{ formatTime(news.publishTime) }}</div>
       </div>
@@ -16,7 +22,6 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import request from '@/api/auth'
 
 export default {
@@ -34,7 +39,6 @@ export default {
     }
   },
   setup(props) {
-    const router = useRouter()
     const recommendedNews = ref([])
     const loading = ref(true)
 
@@ -46,6 +50,15 @@ export default {
       material: 'material_news',
       exhibition: 'exhibition_news',
       product: 'product_news'
+    }
+
+    // 直接跳转到新闻详情页
+    const goToNewsDetail = (news) => {
+      if (news && news.id) {
+        console.log('点击了相关推荐新闻:', news.id)
+        // 使用window.location.href直接跳转
+        window.location.href = `/news/${news.id}?type=${props.newsType}`
+      }
     }
 
     // 格式化时间
@@ -84,6 +97,8 @@ export default {
           
           // 只取前5条
           recommendedNews.value = filteredNews.slice(0, 5)
+          console.log('相关推荐新闻数据:', recommendedNews.value)
+          console.log('当前新闻ID:', props.currentNewsId, '类型:', props.newsType)
         } else {
           recommendedNews.value = []
         }
@@ -95,19 +110,6 @@ export default {
       }
     }
 
-    // 查看新闻详情
-    const viewNewsDetail = (news) => {
-      if (news.id) {
-        router.push({
-          name: 'newsDetail',
-          params: { id: news.id },
-          query: { type: props.newsType }
-        })
-      } else if (news.link) {
-        window.open(news.link, '_blank')
-      }
-    }
-
     onMounted(() => {
       fetchRecommendedNews()
     })
@@ -116,7 +118,7 @@ export default {
       recommendedNews,
       loading,
       formatTime,
-      viewNewsDetail
+      goToNewsDetail
     }
   }
 }
@@ -151,11 +153,27 @@ export default {
   cursor: pointer;
   padding: 10px;
   border-radius: 4px;
-  transition: all 0.3s;
+  transition: all 0.2s;
+  position: relative;
+  z-index: 1;
+  border: 1px solid transparent;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .news-item:hover {
   background-color: #f5f7fa;
+  border: 1px solid #ebeef5;
+  text-decoration: none;
+  color: #409EFF;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.news-item:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .news-title {
@@ -163,6 +181,10 @@ export default {
   font-weight: 500;
   color: #303133;
   margin-bottom: 5px;
+}
+
+.news-item:hover .news-title {
+  color: #409EFF;
 }
 
 .news-time {
