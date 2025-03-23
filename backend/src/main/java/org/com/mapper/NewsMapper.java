@@ -23,7 +23,7 @@ public interface NewsMapper extends BaseMapper<News> {
     @Insert("<script>" +
             "INSERT INTO ${tableName} (title, link, publish_time) VALUES (#{title}, #{link}, #{publishTime})" +
             "</script>")
-    void insertNewsDynamicTable(@Param("tableName") String tableName,
+    long insertNewsDynamicTable(@Param("tableName") String tableName,
                                 @Param("title") String title,
                                 @Param("link") String link,
                                 @Param("publishTime") LocalDateTime publishTime);
@@ -116,4 +116,31 @@ public interface NewsMapper extends BaseMapper<News> {
             "SELECT COUNT(*) FROM ${tableName} WHERE title LIKE CONCAT('%', #{query}, '%')" +
             "</script>")
     long countSearchResults(@Param("tableName") String tableName, @Param("query") String query);
+    
+    /**
+     * 获取最后插入的新闻ID
+     * @param tableName 表名
+     * @return 最后插入的ID
+     */
+    @Select("<script>" +
+            "SELECT LAST_INSERT_ID() FROM ${tableName} LIMIT 1" +
+            "</script>")
+    Long selectLastInsertIdByType(@Param("tableName") String tableName);
+    
+    /**
+     * 获取还未提取关键词的新闻列表
+     * @param tableName 新闻表名
+     * @param limit 限制条数
+     * @return 未处理的新闻列表
+     */
+    @Select("<script>" +
+            "SELECT n.* FROM ${tableName} n " +
+            "LEFT JOIN (" +
+            "  SELECT DISTINCT news_id, news_type FROM keyword " +
+            "  WHERE news_type = #{tableName}" +
+            ") k ON n.id = k.news_id " +
+            "WHERE k.news_id IS NULL " +
+            "LIMIT #{limit}" +
+            "</script>")
+    List<News> selectNewsWithoutKeywords(@Param("tableName") String tableName, @Param("limit") int limit);
 }

@@ -31,6 +31,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.com.dto.PageResult;
+import org.com.service.KeywordService;
 
 @Service
 public class NewsServiceImpl implements NewsService {
@@ -46,6 +47,9 @@ public class NewsServiceImpl implements NewsService {
     
     @Resource
     private CSVUtil csvUtil;
+    
+    @Resource
+    private KeywordService keywordService;
     
     @Value("${news.csv.export.path:./news_export}")
     private String csvExportBasePath;
@@ -110,7 +114,19 @@ public class NewsServiceImpl implements NewsService {
                             // 手动安全解析时间后再入库
                             LocalDateTime publishTime = parseTime(news.getPublishTime());
                             // 这里直接调用mapper插入
-                            newsMapper.insertNewsDynamicTable(sql, news.getTitle(), news.getLink(), publishTime);
+                            if (newsMapper.insertNewsDynamicTable(sql, news.getTitle(), news.getLink(), publishTime) > 0) {
+                                // 获取新闻ID，用于提取关键词
+                                Long newsId = newsMapper.selectLastInsertIdByType(sql);
+                                // 获取新闻内容
+                                String content = crawlNewsContent(news.getLink());
+                                // 使用内容提取关键词
+                                try {
+                                    keywordService.extractAndSaveKeywords(newsId, sql, news.getTitle(), content);
+                                } catch (Exception e) {
+                                    System.out.println("提取关键词失败: " + e.getMessage());
+                                    e.printStackTrace();
+                                }
+                            }
                         }
                     }
                     // 已成功爬取一个URL
@@ -494,5 +510,76 @@ public class NewsServiceImpl implements NewsService {
         }
         
         return new PageResult<>(records, totalCount, pageNum, pageSize);
+    }
+
+    /**
+     * 定时任务：每天凌晨3点处理已有新闻并提取关键词
+     * 针对已存在的没有提取关键词的新闻进行处理
+     */
+    @Override
+    @Scheduled(cron = "0 0 3 * * ?")
+    public void processExistingNewsKeywords() {
+        System.out.println("开始处理已有新闻的关键词提取任务...");
+        
+        HashMap<String, String> typeMap = urlMatchSqlUtil.getUrls();
+        int totalProcessed = 0;
+        int processLimit = 100; // 每次处理的新闻数量限制
+        
+        for (Map.Entry<String, String> entry : typeMap.entrySet()) {
+            String tableName = entry.getKey();
+            int processed = 0;
+            
+            try {
+                // 获取该类型下未处理的新闻
+                List<News> unprocessedNews = newsMapper.selectNewsWithoutKeywords(tableName, processLimit);
+                
+                if (unprocessedNews == null || unprocessedNews.isEmpty()) {
+                    System.out.println("没有找到未处理的 " + tableName + " 类型新闻");
+                    continue;
+                }
+                
+                System.out.println("找到 " + unprocessedNews.size() + " 条未处理的 " + tableName + " 新闻");
+                
+                for (News news : unprocessedNews) {
+                    try {
+                        // 获取新闻内容
+                        String content = crawlNewsContent(news.getLink());
+                        
+                        // 提取关键词
+                        int keywordCount = keywordService.extractAndSaveKeywords(
+                            news.getId(), tableName, news.getTitle(), content);
+                        
+                        if (keywordCount > 0) {
+                            processed++;
+                            System.out.println("成功从新闻ID: " + news.getId() + " 提取 " + keywordCount + " 个关键词");
+                        }
+                        
+                        // 每处理5篇新闻添加一个随机延迟，避免请求过于频繁
+                        if (processed % 5 == 0 && processed > 0) {
+                            long delayTime = 2000 + (long)(Math.random() * 3000);
+                            System.out.println("已处理 " + processed + " 篇新闻，休息 " + (delayTime/1000) + " 秒...");
+                            Thread.sleep(delayTime);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("处理新闻ID: " + news.getId() + " 时出错: " + e.getMessage());
+                    }
+                }
+                
+                totalProcessed += processed;
+                System.out.println("成功处理 " + processed + " 条 " + tableName + " 类型新闻");
+                
+                // 每处理完一个类型，增加一个较长的休息时间
+                if (processed > 0) {
+                    long restTime = 5000 + (long)(Math.random() * 5000);
+                    System.out.println("完成 " + tableName + " 类型处理，休息 " + (restTime/1000) + " 秒后继续下一类型...");
+                    Thread.sleep(restTime);
+                }
+            } catch (Exception e) {
+                System.err.println("处理 " + tableName + " 类型新闻时发生异常: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+        System.out.println("关键词提取任务完成！共处理 " + totalProcessed + " 条新闻");
     }
 }

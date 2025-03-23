@@ -33,4 +33,7 @@ public interface NewsService {
     
     // 分页搜索新闻
     PageResult<News> pageSearchNews(String query, Integer pageNum, Integer pageSize);
+    
+    // 定时任务处理已有新闻并提取关键词
+    void processExistingNewsKeywords();
 }

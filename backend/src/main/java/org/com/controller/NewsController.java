@@ -7,8 +7,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.com.dto.PageDTO;
 import org.com.dto.PageResult;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,20 +170,51 @@ public class NewsController {
 
     /**
      * 手动触发爬虫任务
-     * @return 触发结果
+     * @return 任务执行结果
      */
     @PostMapping("/trigger-crawl")
-    public ResponseEntity<?> triggerCrawlTask() {
+    public ResponseEntity<Map<String, Object>> triggerCrawlTask() {
+        Map<String, Object> response = new HashMap<>();
+        
         try {
-            // 调用已有的爬虫任务方法
+            // 调用爬虫服务
             newsService.autoCrawlTask();
             
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "爬虫任务已成功触发");
+            response.put("success", true);
+            response.put("message", "爬虫任务已触发，正在抓取最新新闻");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "触发爬虫任务失败: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", "触发爬虫任务失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * 手动触发关键词提取
+     * @return 任务执行结果
+     */
+    @PostMapping("/process-keywords")
+    public ResponseEntity<Map<String, Object>> processKeywords() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // 开启一个新线程执行关键词提取任务，避免阻塞请求
+            new Thread(() -> {
+                try {
+                    newsService.processExistingNewsKeywords();
+                } catch (Exception e) {
+                    System.err.println("关键词提取任务失败: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }).start();
+            
+            response.put("success", true);
+            response.put("message", "关键词提取任务已在后台启动，请稍后查看结果");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "触发关键词提取任务失败: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

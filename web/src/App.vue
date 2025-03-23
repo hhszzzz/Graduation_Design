@@ -4,7 +4,8 @@
       <el-header>
         <el-menu mode="horizontal" :router="true" class="nav-menu" :ellipsis="false">
           <el-menu-item index="/">首页</el-menu-item>
-          <el-menu-item index="/about">关于</el-menu-item>
+          <el-menu-item index="/data">数据分析</el-menu-item>
+          <!-- <el-menu-item index="/about">关于</el-menu-item> -->
           <div class="flex-grow"></div>
           <!-- User profile dropdown -->
           <div class="user-dropdown" v-if="user">

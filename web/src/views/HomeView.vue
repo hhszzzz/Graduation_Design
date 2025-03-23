@@ -886,7 +886,7 @@ export default {
 }
 
 .clickable-title:hover::after {
-  width: 100%;
+  width: 50%;
 }
 
 h4 {

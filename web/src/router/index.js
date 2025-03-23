@@ -41,6 +41,12 @@ const routes = [
     name: 'profile',
     component: () => import('../views/UserProfileView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/data',
+    name: 'dataVisualization',
+    component: () => import('../views/DataVisualizationView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
