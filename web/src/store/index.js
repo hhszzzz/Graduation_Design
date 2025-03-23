@@ -1,11 +1,11 @@
 import { createStore } from 'vuex'
 import { login, register, getUserInfo } from '@/api/auth'
 
-export default createStore({
+const store = createStore({
   state: {
-    token: localStorage.getItem('token') || '',
+    token: '',  // 初始为空，将在created中检查
     user: null,
-    isAuthenticated: !!localStorage.getItem('token')
+    isAuthenticated: false
   },
   getters: {
     // 获取用户信息
@@ -18,13 +18,52 @@ export default createStore({
   mutations: {
     // 设置token
     SET_TOKEN(state, token) {
-      state.token = token
-      state.isAuthenticated = !!token
+      // 验证token是否有效
+      if (!token || typeof token !== 'string') {
+        console.error('无效的token:', token);
+        token = '';
+      }
+      
+      // 如果token格式不正确，或者包含非ASCII字符，清空token
+      if (token && !/^[a-zA-Z0-9\-_.]+$/.test(token.replace('Bearer ', ''))) {
+        console.error('Token格式不正确，可能已损坏:', token);
+        token = '';
+      }
+      
+      state.token = token;
+      state.isAuthenticated = !!token;
+      
       // 持久化token到localStorage
       if (token) {
-        localStorage.setItem('token', token)
+        localStorage.setItem('token', token);
+        console.log('token已保存:', token);
       } else {
-        localStorage.removeItem('token')
+        localStorage.removeItem('token');
+        console.log('token已清除');
+      }
+    },
+    // 初始化token
+    INIT_TOKEN(state) {
+      const storedToken = localStorage.getItem('token');
+      
+      // 检查token是否有效
+      if (storedToken && typeof storedToken === 'string') {
+        // 检查token格式
+        if (/^[a-zA-Z0-9\-_.]+$/.test(storedToken.replace('Bearer ', ''))) {
+          state.token = storedToken;
+          state.isAuthenticated = true;
+          console.log('从localStorage恢复token:', storedToken);
+        } else {
+          console.error('localStorage中token格式不正确，可能已损坏:', storedToken);
+          localStorage.removeItem('token');
+          state.token = '';
+          state.isAuthenticated = false;
+        }
+      } else {
+        // 无效或不存在的token
+        localStorage.removeItem('token');
+        state.token = '';
+        state.isAuthenticated = false;
       }
     },
     // 设置用户信息
@@ -87,3 +126,8 @@ export default createStore({
   modules: {
   }
 })
+
+// 创建后立即检查token
+store.commit('INIT_TOKEN')
+
+export default store

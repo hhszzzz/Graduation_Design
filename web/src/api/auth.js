@@ -12,11 +12,33 @@ service.interceptors.request.use(
     // 如果存在token，请求携带token
     const token = localStorage.getItem('token');
     if (token) {
-      // 检查token是否已包含Bearer前缀
-      if (token.startsWith('Bearer ')) {
-        config.headers['Authorization'] = token;
-      } else {
-        config.headers['Authorization'] = 'Bearer ' + token;
+      try {
+        // 检查token是否基本格式有效
+        if (typeof token !== 'string' || token.trim() === '') {
+          console.error('本地存储的token无效，已清除');
+          localStorage.removeItem('token');
+          return config;
+        }
+        
+        // 检查token格式
+        const tokenValue = token.replace('Bearer ', '');
+        if (!/^[a-zA-Z0-9\-_.]+$/.test(tokenValue)) {
+          console.error('本地存储的token格式不正确，已清除');
+          localStorage.removeItem('token');
+          return config;
+        }
+        
+        // 检查token是否已包含Bearer前缀
+        if (token.startsWith('Bearer ')) {
+          config.headers['Authorization'] = token;
+        } else {
+          config.headers['Authorization'] = 'Bearer ' + token;
+        }
+        
+        console.log('请求头中的认证信息:', config.headers['Authorization']);
+      } catch (e) {
+        console.error('处理token时发生错误:', e);
+        localStorage.removeItem('token');
       }
     }
     return config;

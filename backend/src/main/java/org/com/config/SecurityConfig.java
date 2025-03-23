@@ -53,6 +53,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .permitAll()
                 .antMatchers(HttpMethod.GET, "/api/ai/summarize") // 允许未授权访问AI总结API
                 .permitAll()
+                .antMatchers(HttpMethod.GET, "/api/news/**") // 允许未授权访问新闻详情
+                .permitAll()
+                .antMatchers(HttpMethod.GET, "/api/comments/**") // 允许未授权访问评论
+                .permitAll()
                 .anyRequest() // 除了上面的请求，其它请求都需要鉴权
                 .authenticated();
         

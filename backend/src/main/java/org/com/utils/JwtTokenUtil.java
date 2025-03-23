@@ -1,8 +1,14 @@
 package org.com.utils;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.SignatureException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -17,6 +23,8 @@ import java.util.function.Function;
  */
 @Component
 public class JwtTokenUtil {
+    
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenUtil.class);
     
     @Value("${jwt.secret}")
     private String secret;
@@ -41,23 +49,50 @@ public class JwtTokenUtil {
      * 从token中获取登录用户名
      */
     public String getUsernameFromToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
+        try {
+            return getClaimFromToken(token, Claims::getSubject);
+        } catch (ExpiredJwtException e) {
+            logger.warn("JWT令牌已过期: {}", e.getMessage());
+            return null;
+        } catch (MalformedJwtException e) {
+            logger.warn("JWT令牌格式错误: {}", e.getMessage());
+            return null;
+        } catch (SignatureException e) {
+            logger.warn("JWT签名验证失败: {}", e.getMessage());
+            return null;
+        } catch (JwtException e) {
+            logger.warn("JWT解析异常: {}", e.getMessage());
+            return null;
+        } catch (Exception e) {
+            logger.error("获取用户名异常: {}", e.getMessage());
+            return null;
+        }
     }
     
     /**
      * 验证token是否有效
      */
     public boolean validateToken(String token, UserDetails userDetails) {
-        String username = getUsernameFromToken(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        try {
+            String username = getUsernameFromToken(token);
+            return username != null && username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        } catch (Exception e) {
+            logger.error("验证token异常: {}", e.getMessage());
+            return false;
+        }
     }
     
     /**
      * 判断token是否已经失效
      */
     private boolean isTokenExpired(String token) {
-        Date expiredDate = getExpiredDateFromToken(token);
-        return expiredDate.before(new Date());
+        try {
+            Date expiredDate = getExpiredDateFromToken(token);
+            return expiredDate.before(new Date());
+        } catch (Exception e) {
+            logger.error("检查token过期异常: {}", e.getMessage());
+            return true;
+        }
     }
     
     /**
@@ -79,10 +114,15 @@ public class JwtTokenUtil {
      * 从token中获取所有的claim
      */
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parser()
-                .setSigningKey(secret)
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parser()
+                    .setSigningKey(secret)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            logger.error("解析JWT令牌失败: {}", e.getMessage());
+            throw e;
+        }
     }
     
     /**
