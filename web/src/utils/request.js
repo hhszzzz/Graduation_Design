@@ -27,13 +27,13 @@ service.interceptors.request.use(
       }
       
       // 记录发送的token用于调试
-      console.log('发送请求使用的token:', config.headers['Authorization']);
+      // console.log('发送请求使用的token:', config.headers['Authorization']);
     }
     return config
   },
   error => {
     // 处理请求错误
-    console.log(error)
+    // console.log(error)
     return Promise.reject(error)
   }
 )
@@ -49,7 +49,7 @@ service.interceptors.response.use(
         contentType.includes('text/plain') ||
         typeof response.data === 'string' && 
         (response.data.includes('<html') || response.data.includes('<!DOCTYPE'))) {
-      console.log('检测到HTML内容响应，直接返回数据，长度:', response.data.length)
+      // console.log('检测到HTML内容响应，直接返回数据，长度:', response.data.length)
       return response.data
     }
     
@@ -57,7 +57,7 @@ service.interceptors.response.use(
     
     // 检查响应是否有code字段
     if (res && res.code === undefined) {
-      console.log('响应没有code字段，尝试处理:', typeof res, res ? Object.keys(res).join(',') : '无值')
+      // console.log('响应没有code字段，尝试处理:', typeof res, res ? Object.keys(res).join(',') : '无值')
       
       // 如果响应是对象且没有code字段，可能是直接返回的数据
       if (typeof res === 'object' && res !== null) {
@@ -93,7 +93,7 @@ service.interceptors.response.use(
     }
   },
   error => {
-    console.log('请求错误:', error)
+    // console.log('请求错误:', error)
     
     // 如果错误对象包含响应
     if (error.response) {
@@ -103,7 +103,7 @@ service.interceptors.response.use(
       // 如果是HTML内容或较长字符串，可能是有用内容
       if ((contentType.includes('text/html') || contentType.includes('text/plain')) && 
           typeof error.response.data === 'string' && error.response.data.length > 200) {
-        console.log('错误响应中检测到HTML内容，长度:', error.response.data.length)
+        // console.log('错误响应中检测到HTML内容，长度:', error.response.data.length)
         return error.response.data // 直接返回HTML内容
       }
       

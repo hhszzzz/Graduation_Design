@@ -20,7 +20,10 @@
                     <el-icon v-else><Star /></el-icon>
                     {{ isCollected ? '取消收藏' : '收藏' }}
                   </el-button>
-                  <el-button @click="goBack" size="small">返回列表</el-button>
+                  <el-button @click="goBack" size="small">
+                    <el-icon><ArrowLeft /></el-icon>
+                    返回
+                  </el-button>
                 </div>
               </div>
             </div>
@@ -198,7 +201,7 @@ import { ElMessage } from 'element-plus'
 import request from '@/api/auth'
 import { useStore } from 'vuex'
 import NewsDetailSidebar from '@/components/NewsDetailSidebar.vue'
-import { Star, StarFilled } from '@element-plus/icons-vue'
+import { Star, StarFilled, ArrowLeft } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/date'
 import { getNewsDetail, getNewsContent } from '@/api/news'
 import { getComments, getReplies, addComment, likeComment } from '@/api/comment'
@@ -209,7 +212,8 @@ export default {
   components: {
     NewsDetailSidebar,
     Star,
-    StarFilled
+    StarFilled,
+    ArrowLeft
   },
   setup() {
     const route = useRoute()
@@ -240,7 +244,7 @@ export default {
     
     // 用户登录状态
     const isLoggedIn = computed(() => {
-      console.log('登录状态检查:', store.getters.isLoggedIn, store.getters.isAuthenticated)
+      // console.log('登录状态检查:', store.getters.isLoggedIn, store.getters.isAuthenticated)
       // 使用store中的getter来判断登录状态
       return store.getters.isLoggedIn || store.getters.isAuthenticated
     })
@@ -281,9 +285,9 @@ export default {
       crawlError.value = false
       
       try {
-        console.log('获取新闻详情，ID:', newsId.value, '类型:', newsTypeMap[newsType.value] || newsType.value)
+        // console.log('获取新闻详情，ID:', newsId.value, '类型:', newsTypeMap[newsType.value] || newsType.value)
         const response = await getNewsDetail(newsId.value, newsTypeMap[newsType.value] || newsType.value)
-        console.log('新闻详情响应:', response)
+        // console.log('新闻详情响应:', response)
         
         // 处理不同格式的响应
         if (response && response.data) {
@@ -291,7 +295,7 @@ export default {
           news.value = response.data
         } else if (response && typeof response === 'object' && !response.data) {
           // 非标准格式：直接返回的对象
-          console.log('收到非标准格式响应:', response)
+          // console.log('收到非标准格式响应:', response)
           news.value = response
         } else {
           console.warn('未找到新闻数据或数据结构不正确:', response)
@@ -311,7 +315,7 @@ export default {
           // 尝试提取有用信息
           const responseData = error.response.data
           if (responseData && (responseData.data || responseData.id)) {
-            console.log('从错误中提取到可用的新闻数据:', responseData)
+            // console.log('从错误中提取到可用的新闻数据:', responseData)
             news.value = responseData.data || responseData
             
             // 如果获取到新闻但没有内容，且有链接，则自动调用爬虫获取内容
@@ -358,12 +362,12 @@ export default {
         ElMessage.info('正在获取文章内容，请稍候...')
       }
       
-      console.log('开始获取文章内容，链接:', link)
+      // console.log('开始获取文章内容，链接:', link)
       
       try {
         // 使用API模块中的方法获取内容
         const response = await getNewsContent(link)
-        console.log('内容响应类型:', typeof response)
+        // console.log('内容响应类型:', typeof response)
         
         // 从响应中提取内容
         let extractedContent = null
@@ -371,17 +375,17 @@ export default {
         // 1. 如果响应直接是字符串（HTML或文本）
         if (typeof response === 'string') {
           extractedContent = response
-          console.log('直接获取到HTML/文本内容，长度:', response.length)
+          // console.log('直接获取到HTML/文本内容，长度:', response.length)
         }
         // 2. 从标准响应对象中提取
         else if (response && response.data && response.data.content) {
           extractedContent = response.data.content
-          console.log('从标准响应提取内容')
+          // console.log('从标准响应提取内容')
         }
         // 3. 从直接包含content字段的对象提取
         else if (response && response.content) {
           extractedContent = response.content
-          console.log('从对象直接提取content字段')
+          // console.log('从对象直接提取content字段')
         }
         // 4. 递归搜索复杂对象
         else if (response && typeof response === 'object') {
@@ -391,7 +395,7 @@ export default {
             
             // 直接检查content字段
             if (obj.content && typeof obj.content === 'string') {
-              console.log(`在路径 ${path}.content 找到内容`)
+              // console.log(`在路径 ${path}.content 找到内容`)
               return obj.content
             }
             
@@ -408,7 +412,7 @@ export default {
           }
           
           extractedContent = findContent(response)
-          console.log('递归搜索内容:', extractedContent ? '成功' : '失败')
+          // console.log('递归搜索内容:', extractedContent ? '成功' : '失败')
           
           // 如果找不到content字段，尝试找最长的字符串
           if (!extractedContent) {
@@ -425,7 +429,7 @@ export default {
                   if (typeof value === 'string' && value.length > maxLength) {
                     maxLength = value.length
                     extractedContent = value
-                    console.log(`在路径 ${currentPath} 找到更长字符串，长度: ${value.length}`)
+                    // console.log(`在路径 ${currentPath} 找到更长字符串，长度: ${value.length}`)
                   } else if (typeof value === 'object' && value !== null) {
                     findLongestString(value, currentPath)
                   }
@@ -441,7 +445,7 @@ export default {
         if (extractedContent) {
           // 处理可能的Unicode编码
           const finalContent = decodeUnicodeContent(extractedContent)
-          console.log('最终内容长度:', finalContent?.length || 0)
+          // console.log('最终内容长度:', finalContent?.length || 0)
           
           // 更新新闻内容
           news.value.content = finalContent
@@ -460,7 +464,7 @@ export default {
         if (error.response && typeof error.response.data === 'string' && 
             error.response.data.length > 200) {
           contentFromError = error.response.data
-          console.log('从错误响应中提取内容，长度:', contentFromError.length)
+          // console.log('从错误响应中提取内容，长度:', contentFromError.length)
         } else if (error.data && typeof error.data === 'string') {
           contentFromError = error.data
         } else if (error.message && error.message.length > 200) {
@@ -551,7 +555,7 @@ export default {
                         processedContent.includes('<p'));
         
         if (isHtml) {
-          console.log('检测到HTML内容，提取纯文本');
+          // console.log('检测到HTML内容，提取纯文本');
           
           // 提取并清理HTML内容
           try {
@@ -722,12 +726,12 @@ export default {
       currentPage.value = page
       
       try {
-        console.log('获取评论列表:', {
-          newsId: newsId.value,
-          newsType: newsTypeMap[newsType.value] || 'daily_news',
-          page: currentPage.value,
-          size: pageSize.value
-        })
+        // console.log('获取评论列表:', {
+        //   newsId: newsId.value,
+        //   newsType: newsTypeMap[newsType.value] || 'daily_news',
+        //   page: currentPage.value,
+        //   size: pageSize.value
+        // })
         
         const { data } = await getComments({
           newsId: newsId.value,
@@ -736,7 +740,7 @@ export default {
           size: pageSize.value
         })
         
-        console.log('评论列表响应:', data)
+        // console.log('评论列表响应:', data)
         
         if (page === 1) {
           comments.value = data.comments || []
@@ -772,21 +776,21 @@ export default {
       }
       
       try {
-        console.log('提交评论:', {
+        // console.log('提交评论:', {
+        //   newsId: newsId.value,
+        //   newsType: newsTypeMap[newsType.value] || 'daily_news',
+        //   userId: store.getters.getUser?.id,
+        //   content: commentContent.value
+        // })
+        
+        await addComment({
           newsId: newsId.value,
           newsType: newsTypeMap[newsType.value] || 'daily_news',
           userId: store.getters.getUser?.id,
           content: commentContent.value
         })
         
-        const response = await addComment({
-          newsId: newsId.value,
-          newsType: newsTypeMap[newsType.value] || 'daily_news',
-          userId: store.getters.getUser?.id,
-          content: commentContent.value
-        })
-        
-        console.log('评论成功，响应:', response)
+        // console.log('评论成功，响应:', response)
         ElMessage.success('评论成功')
         commentContent.value = ''
         fetchComments(1) // 重新加载第一页评论
@@ -808,7 +812,7 @@ export default {
       replyToId.value = comment.id
       replyContent.value = ''
       
-      console.log('开始回复评论:', comment.id, '用户:', comment.username)
+      // console.log('开始回复评论:', comment.id, '用户:', comment.username)
     }
     
     // 处理回复中的回复
@@ -849,11 +853,11 @@ export default {
           replyToId: replyToId.value
         }
         
-        console.log('提交回复:', replyData)
+        // console.log('提交回复:', replyData)
         
         // 发送回复请求
-        const response = await addComment(replyData)
-        console.log('回复成功，响应:', response)
+        await addComment(replyData)
+        // console.log('回复成功，响应:', response)
         
         // 重置表单状态
         ElMessage.success('回复成功')
@@ -862,14 +866,14 @@ export default {
         replyToId.value = null
         
         // 重新获取该评论的回复列表
-        console.log('获取评论回复列表, 父评论ID:', parentComment.id)
+        // console.log('获取评论回复列表, 父评论ID:', parentComment.id)
         const repliesResponse = await getReplies(parentComment.id)
-        console.log('获取回复列表响应:', repliesResponse)
+        // console.log('获取回复列表响应:', repliesResponse)
         
         // 更新评论的回复列表
         const index = comments.value.findIndex(c => c.id === parentComment.id)
         if (index !== -1) {
-          console.log('找到父评论索引:', index)
+          // console.log('找到父评论索引:', index)
           
           // 提取回复数据，支持多种响应结构
           let replies = null
@@ -877,24 +881,24 @@ export default {
           if (repliesResponse && repliesResponse.data && Array.isArray(repliesResponse.data)) {
             // 标准格式: { data: [...] }
             replies = repliesResponse.data
-            console.log('从标准响应格式提取回复数组')
+            // console.log('从标准响应格式提取回复数组')
           } else if (repliesResponse && Array.isArray(repliesResponse)) {
             // 直接数组格式
             replies = repliesResponse
-            console.log('从直接数组格式提取回复')
+            // console.log('从直接数组格式提取回复')
           } else if (repliesResponse && typeof repliesResponse === 'object') {
             // 尝试其他字段
             for (const key in repliesResponse) {
               if (Array.isArray(repliesResponse[key])) {
                 replies = repliesResponse[key]
-                console.log(`从响应的${key}字段提取回复数组`)
+                // console.log(`从响应的${key}字段提取回复数组`)
                 break
               }
             }
           }
           
           if (replies) {
-            console.log('成功提取回复列表, 数量:', replies.length)
+            // console.log('成功提取回复列表, 数量:', replies.length)
             comments.value[index].children = replies
           } else {
             console.error('无法从响应中提取回复列表:', repliesResponse)
@@ -936,9 +940,9 @@ export default {
       if (!comment || !comment.id) return
       
       try {
-        console.log('手动加载评论回复, 评论ID:', comment.id)
+        // console.log('手动加载评论回复, 评论ID:', comment.id)
         const response = await getReplies(comment.id)
-        console.log('回复列表响应:', response)
+        // console.log('回复列表响应:', response)
         
         // 提取回复数据
         let replies = null
@@ -981,7 +985,7 @@ export default {
             // 尝试获取用户信息来验证token
             if (!store.state.user) {
               await store.dispatch('getUserInfo');
-              console.log('用户信息已加载:', store.getters.getUser);
+              // console.log('用户信息已加载:', store.getters.getUser);
             }
           } catch (error) {
             console.error('获取用户信息失败，可能是token无效:', error);

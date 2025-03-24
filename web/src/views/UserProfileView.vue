@@ -139,7 +139,7 @@ export default {
         
         if (response && response.data) {
           collections.value = response.data
-          console.log('获取收藏成功:', collections.value)
+          // console.log('获取收藏成功:', collections.value)
         } else {
           collections.value = []
         }
@@ -164,7 +164,7 @@ export default {
         
         if (response && response.data) {
           recentlyViewed.value = response.data
-          console.log('获取历史成功:', recentlyViewed.value)
+          // console.log('获取历史成功:', recentlyViewed.value)
         } else {
           recentlyViewed.value = []
         }

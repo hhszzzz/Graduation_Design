@@ -36,10 +36,10 @@ const store = createStore({
       // 持久化token到localStorage
       if (token) {
         localStorage.setItem('token', token);
-        console.log('token已保存:', token);
+        // console.log('token已保存:', token);
       } else {
         localStorage.removeItem('token');
-        console.log('token已清除');
+        // console.log('token已清除');
       }
     },
     // 初始化token
@@ -52,7 +52,7 @@ const store = createStore({
         if (/^[a-zA-Z0-9\-_.]+$/.test(storedToken.replace('Bearer ', ''))) {
           state.token = storedToken;
           state.isAuthenticated = true;
-          console.log('从localStorage恢复token:', storedToken);
+          // console.log('从localStorage恢复token:', storedToken);
         } else {
           console.error('localStorage中token格式不正确，可能已损坏:', storedToken);
           localStorage.removeItem('token');

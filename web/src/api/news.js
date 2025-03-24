@@ -12,11 +12,11 @@ export function getNewsDetail(id, type) {
     method: 'get',
     params: { type }
   }).then(response => {
-    console.log('getNewsDetail原始响应:', response);
+    // console.log('getNewsDetail原始响应:', response);
     
     // 处理系统错误响应但包含数据的情况
     if (response && response.message === '系统错误' && response.code === undefined) {
-      console.log('新闻详情返回系统错误但尝试提取数据');
+      // console.log('新闻详情返回系统错误但尝试提取数据');
       // 尝试从response中提取数据
       if (response.data) {
         return {
@@ -55,7 +55,7 @@ export function getNewsDetail(id, type) {
     
     // 如果error包含有用数据，尝试提取
     if (error && error.data) {
-      console.log('从错误中提取数据:', error.data);
+      // console.log('从错误中提取数据:', error.data);
       return {
         code: 200,
         message: 'OK',
@@ -76,7 +76,7 @@ export function getNewsContent(url) {
     return Promise.reject(new Error('缺少URL参数'))
   }
   
-  console.log('获取文章内容，URL:', url)
+  // console.log('获取文章内容，URL:', url)
   
   return request({
     url: '/api/news/crawl_content',
@@ -108,7 +108,7 @@ export function getNewsContent(url) {
       // 如果错误响应中包含HTML内容
       if (typeof error.response.data === 'string' && 
           (error.response.data.includes('<html') || error.response.data.length > 500)) {
-        console.log('从错误响应中提取有效内容')
+        // console.log('从错误响应中提取有效内容')
         return error.response.data
       }
       

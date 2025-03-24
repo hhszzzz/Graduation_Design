@@ -35,7 +35,7 @@ service.interceptors.request.use(
           config.headers['Authorization'] = 'Bearer ' + token;
         }
         
-        console.log('请求头中的认证信息:', config.headers['Authorization']);
+        // console.log('请求头中的认证信息:', config.headers['Authorization']);
       } catch (e) {
         console.error('处理token时发生错误:', e);
         localStorage.removeItem('token');
@@ -44,7 +44,7 @@ service.interceptors.request.use(
     return config;
   },
   error => {
-    console.log(error);
+    // console.log(error);
     return Promise.reject(error);
   }
 );
@@ -76,7 +76,7 @@ service.interceptors.response.use(
     return { data: res, code: 200 };
   },
   error => {
-    console.log('err', error);
+    // console.log('err', error);
     // 如果是401错误，可能是token过期
     if (error.response && error.response.status === 401) {
       // 清除本地token和登录状态

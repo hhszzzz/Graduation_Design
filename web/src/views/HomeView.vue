@@ -469,25 +469,25 @@ export default {
         
         // 监听思考过程开始
         eventSource.addEventListener('reasoning-start', (event) => {
-          console.log('收到reasoning-start事件:', event.data);
+          // console.log('收到reasoning-start事件:', event.data);
           summaryReasoningContent.value = event.data + '\n\n';
         });
         
         // 监听思考过程
         eventSource.addEventListener('reasoning', (event) => {
-          console.log('收到reasoning事件:', event.data);
+          // console.log('收到reasoning事件:', event.data);
           summaryReasoningContent.value += event.data + '\n\n';
         });
         
         // 监听思考过程结束
         eventSource.addEventListener('reasoning-end', (event) => {
-          console.log('收到reasoning-end事件:', event.data);
+          // console.log('收到reasoning-end事件:', event.data);
           summaryReasoningContent.value += event.data + '\n\n';
         });
         
         // 监听摘要内容
         eventSource.addEventListener('summary', (event) => {
-          console.log('收到summary事件:', event.data);
+          // console.log('收到summary事件:', event.data);
           // 如果收到数据表示连接成功，清除超时
           clearTimeout(timeout);
           isConnecting = false; // 连接已确认成功
@@ -495,8 +495,8 @@ export default {
         });
         
         // 监听完成事件
-        eventSource.addEventListener('complete', (event) => {
-          console.log('收到complete事件:', event ? event.data : '无数据');
+        eventSource.addEventListener('complete', () => {
+          // console.log('收到complete事件:', event ? event.data : '无数据');
           clearTimeout(timeout);
           eventSource.close();
           summarizing.value = false;
@@ -504,7 +504,7 @@ export default {
         
         // 监听错误事件
         eventSource.addEventListener('error', (event) => {
-          console.log('收到error事件:', event.data);
+          // console.log('收到error事件:', event.data);
           try {
             if (event.data) {
               // 尝试解析错误数据
@@ -541,7 +541,7 @@ export default {
           
           // 如果正在连接，不要立即显示错误
           if (isConnecting) {
-            console.log('连接中，暂不处理错误');
+            // console.log('连接中，暂不处理错误');
             return;
           }
           
@@ -574,7 +574,7 @@ export default {
 
     // 模拟流式摘要（备用方案，当SSE不可用时）
     const simulateStreamingSummary = async (newsLink) => {
-      console.log('开始模拟流式摘要');
+      // console.log('开始模拟流式摘要');
       // 实际实现应通过WebSocket或SSE从后端获取流式响应
       // 这里模拟流式输出
       
@@ -598,7 +598,7 @@ export default {
       for (const step of reasoningSteps) {
         await new Promise(resolve => setTimeout(resolve, 600));
         summaryReasoningContent.value += step + "\n\n";
-        console.log('添加思考步骤:', step);
+        // console.log('添加思考步骤:', step);
       }
       
       // 发送思考过程结束
@@ -611,11 +611,11 @@ export default {
       for (let i = 0; i < summaryText.length; i += 5) {
         await new Promise(resolve => setTimeout(resolve, 50));
         summaryContent.value += summaryText.substring(i, i + 5);
-        console.log('添加摘要内容:', summaryText.substring(i, i + 5));
+        // console.log('添加摘要内容:', summaryText.substring(i, i + 5));
       }
       
       // 标记处理完成
-      console.log('模拟流式摘要完成');
+      // console.log('模拟流式摘要完成');
       summarizing.value = false;
     }
 

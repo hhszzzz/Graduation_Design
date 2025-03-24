@@ -55,7 +55,7 @@ export default {
     // 直接跳转到新闻详情页
     const goToNewsDetail = (news) => {
       if (news && news.id) {
-        console.log('点击了相关推荐新闻:', news.id)
+        // console.log('点击了相关推荐新闻:', news.id)
         // 使用window.location.href直接跳转
         window.location.href = `/news/${news.id}?type=${props.newsType}`
       }
@@ -97,8 +97,8 @@ export default {
           
           // 只取前5条
           recommendedNews.value = filteredNews.slice(0, 5)
-          console.log('相关推荐新闻数据:', recommendedNews.value)
-          console.log('当前新闻ID:', props.currentNewsId, '类型:', props.newsType)
+          // console.log('相关推荐新闻数据:', recommendedNews.value)
+          // console.log('当前新闻ID:', props.currentNewsId, '类型:', props.newsType)
         } else {
           recommendedNews.value = []
         }
