@@ -302,10 +302,10 @@ export default {
           ElMessage.warning('未找到新闻数据')
           return
         }
-        
-        // 如果获取到新闻但没有内容，且有链接，则自动调用爬虫获取内容
-        if ((!news.value.content || news.value.content.trim() === '') && news.value.link) {
-          await fetchNewsContent(news.value.link, true) // true表示自动模式
+          
+          // 如果获取到新闻但没有内容，且有链接，则自动调用爬虫获取内容
+          if ((!news.value.content || news.value.content.trim() === '') && news.value.link) {
+            await fetchNewsContent(news.value.link, true) // true表示自动模式
         }
       } catch (error) {
         console.error('获取新闻详情出错', error)

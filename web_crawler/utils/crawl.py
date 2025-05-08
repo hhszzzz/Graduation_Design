@@ -47,7 +47,7 @@ def crawl_news1():
 
         news_data.append({"title": title, "link": link, "publishTime": time})
 
-    return news_data
+    return news_dataR
 
 # 综合专区
 def crawl_news2():

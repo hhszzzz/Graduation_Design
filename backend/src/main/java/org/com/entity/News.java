@@ -17,4 +17,7 @@ public class News {
     private String title;
     private String link;
     private String publishTime;
+    
+    // 用于标识新闻来源表（用于搜索结果）
+    private String sourceType;
 }

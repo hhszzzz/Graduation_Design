@@ -143,4 +143,47 @@ public interface NewsMapper extends BaseMapper<News> {
             "LIMIT #{limit}" +
             "</script>")
     List<News> selectNewsWithoutKeywords(@Param("tableName") String tableName, @Param("limit") int limit);
+
+    /**
+     * 获取浏览次数最多的新闻
+     * @param tableName 表名
+     * @param limit 数量限制
+     * @return 热门新闻列表
+     */
+    @Select("<script>" +
+            "SELECT n.* FROM ${tableName} n " +
+            "LEFT JOIN (SELECT news_id, COUNT(*) as view_count FROM user_history GROUP BY news_id) uh " +
+            "ON n.id = uh.news_id " +
+            "ORDER BY IFNULL(uh.view_count, 0) DESC " +
+            "LIMIT #{limit}" +
+            "</script>")
+    List<News> findMostViewedNews(@Param("tableName") String tableName, @Param("limit") int limit);
+
+    /**
+     * 根据ID列表从多个新闻表中查询新闻
+     * @param newsIds 新闻ID列表
+     * @return 新闻列表
+     */
+    @Select("<script>" +
+            "SELECT id, title, link, publish_time, source_type FROM (" +
+            "  SELECT id, title, link, publish_time, 'daily' as source_type FROM daily_news WHERE id IN " +
+            "  <foreach collection='newsIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
+            "  UNION ALL " +
+            "  SELECT id, title, link, publish_time, 'comprehensive' as source_type FROM comprehensive_news WHERE id IN " +
+            "  <foreach collection='newsIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
+            "  UNION ALL " +
+            "  SELECT id, title, link, publish_time, 'fashion' as source_type FROM fashion_news WHERE id IN " +
+            "  <foreach collection='newsIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
+            "  UNION ALL " +
+            "  SELECT id, title, link, publish_time, 'material' as source_type FROM material_news WHERE id IN " +
+            "  <foreach collection='newsIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
+            "  UNION ALL " +
+            "  SELECT id, title, link, publish_time, 'exhibition' as source_type FROM exhibition_news WHERE id IN " +
+            "  <foreach collection='newsIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
+            "  UNION ALL " +
+            "  SELECT id, title, link, publish_time, 'product' as source_type FROM product_news WHERE id IN " +
+            "  <foreach collection='newsIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
+            ") AS combined_news" +
+            "</script>")
+    List<News> selectNewsByIds(@Param("newsIds") List<Long> newsIds);
 }

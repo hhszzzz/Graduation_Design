@@ -2,6 +2,53 @@
   <div class="home" :class="{ 'summary-active': showSummary }">
     <!-- User info displayed in the top-right corner of the news card -->
     <div class="main-content">
+      <!-- 个性化推荐区域 -->
+      <el-card class="recommendation-card" v-motion-fade>
+        <template #header>
+          <div class="card-header">
+            <h2>
+              <el-icon class="recommendation-icon"><Star /></el-icon>
+              为您推荐
+            </h2>
+            <el-button type="primary" size="small" @click="refreshRecommendations" :loading="loadingRecommendations">
+              <el-icon><Refresh /></el-icon> 刷新推荐
+            </el-button>
+          </div>
+        </template>
+        
+        <div v-if="recommendedNews && recommendedNews.length > 0" class="recommendation-list">
+          <div 
+            v-for="(news, index) in recommendedNews" 
+            :key="'rec-' + news.id" 
+            class="recommendation-item"
+            v-motion-slide-visible
+            :delay="index * 100"
+          >
+            <el-card 
+              shadow="hover" 
+              :body-style="{ padding: '12px', height: '100%' }" 
+              class="recommendation-news-card"
+            >
+              <h4 class="recommendation-title">{{ news.title || '无标题' }}</h4>
+            </el-card>
+          </div>
+        </div>
+        <div v-else-if="!loadingRecommendations" class="empty-data">
+          <el-empty description="暂无推荐内容"></el-empty>
+        </div>
+        <div v-else class="loading-container">
+          <el-skeleton :rows="1" animated>
+            <template #template>
+              <div style="display: flex; justify-content: space-between; gap: 16px;">
+                <el-skeleton-item variant="rect" style="width: 30%; height: 150px;" />
+                <el-skeleton-item variant="rect" style="width: 30%; height: 150px;" />
+                <el-skeleton-item variant="rect" style="width: 30%; height: 150px;" />
+              </div>
+            </template>
+          </el-skeleton>
+        </div>
+      </el-card>
+
       <el-card class="news-card" v-motion-fade>
         <template #header>
           <div class="card-header">
@@ -64,12 +111,16 @@
                   <h4 class="clickable-title" @click="viewNewsDetail(news)">{{ news.title || '无标题' }}</h4>
                   <el-button 
                     size="small" 
-                    type="info" 
+                    type="primary"
+                    class="ai-summary-button" 
                     @click="generateSummary(news)"
                     :disabled="summarizing && currentNewsId !== news.id"
                     :loading="summarizing && currentNewsId === news.id"
                   >
-                    <el-icon><ChatDotSquare /></el-icon> AI总结
+                    <span class="ai-button-content">
+                      <span class="ai-sparkle-icon" style="transform: none !important;">✨</span>
+                      <span>总结</span>
+                    </span>
                   </el-button>
                 </div>
                 <el-link v-if="news.link" type="primary" :href="news.link" target="_blank">查看原文</el-link>
@@ -107,19 +158,29 @@
       <el-card v-if="showSummary" class="summary-panel">
         <template #header>
           <div class="card-header">
-            <h2>AI总结</h2>
+            <div class="header-title">
+              <div class="ai-icon">
+                <span class="sparkle" style="transform: none !important;">✨</span>
+              </div>
+              <h2>AI总结</h2>
+            </div>
             <el-button type="text" @click="closeSummary">
               <el-icon><Close /></el-icon>
             </el-button>
           </div>
         </template>
         <div class="summary-content">
-          <h3>{{ currentSummaryTitle || '正在总结...' }}</h3>
+          <h3 class="summary-title">{{ currentSummaryTitle || '正在总结...' }}</h3>
           
           <div v-if="summarizing" class="summary-loading">
+            <div class="ai-thinking-animation">
+              <div class="thinking-circle c1"></div>
+              <div class="thinking-circle c2"></div>
+              <div class="thinking-circle c3"></div>
+            </div>
             <el-skeleton :rows="3" animated />
             <div class="streaming-dots">
-              <span>生成中</span>
+              <span>AI正在思考</span>
               <span class="dot dot1">.</span>
               <span class="dot dot2">.</span>
               <span class="dot dot3">.</span>
@@ -129,8 +190,11 @@
           <div v-else>
             <div v-if="summaryReasoningContent" class="reasoning-content">
               <div class="reasoning-header">
-                <h4>思考过程</h4>
-                <el-button type="text" size="small" @click="toggleReasoning">
+                <div class="reasoning-title">
+                  <i class="reasoning-icon" style="transform: none !important;">💡</i>
+                  <h4>思考过程</h4>
+                </div>
+                <el-button type="primary" size="small" class="toggle-button" @click="toggleReasoning">
                   {{ showReasoning ? '隐藏' : '显示' }}
                 </el-button>
               </div>
@@ -138,7 +202,13 @@
             </div>
             
             <div class="summary-result">
-              <div v-if="summaryContent" class="summary-text">{{ summaryContent }}</div>
+              <div v-if="summaryContent" class="summary-text">
+                <div class="summary-text-header">
+                  <i class="summary-icon" style="transform: none !important;">✨</i>
+                  <span>摘要内容</span>
+                </div>
+                <div class="summary-text-content">{{ summaryContent }}</div>
+              </div>
               <div v-else-if="summaryError" class="summary-error">
                 <el-alert type="error" :title="summaryError" :closable="false" />
               </div>
@@ -149,7 +219,10 @@
             
             <!-- 摘要来源信息 -->
             <div class="summary-source-info" v-if="summaryContent">
-              <el-tag size="small" type="success">联网获取内容</el-tag>
+              <el-tag size="small" class="source-tag">
+                <i class="connection-icon" style="transform: none !important;">🌐</i>
+                联网获取内容
+              </el-tag>
               <!-- <el-tag size="small" type="info" v-if="currentNewsUrl">链接: {{ currentNewsUrl }}</el-tag> -->
             </div>
           </div>
@@ -165,15 +238,15 @@ import { useStore } from 'vuex'
 import { ElMessage } from 'element-plus'
 import request from '@/api/auth' // 导入配置了token的request服务
 import { useRouter } from 'vue-router'
-import { Close, Refresh, ChatDotSquare, Search } from '@element-plus/icons-vue'
+import { Close, Refresh, Search, Star} from '@element-plus/icons-vue'
 
 export default {
   name: 'HomeView',
   components: {
     Close,
     Refresh,
-    ChatDotSquare,
-    Search
+    Search,
+    Star,
   },
   setup() {
     const store = useStore()
@@ -209,6 +282,11 @@ export default {
     const searching = ref(false)
     const isSearchMode = ref(false)
     const searchCount = ref(0)
+
+    // 推荐新闻数据
+    const recommendedNews = ref([])
+    const loadingRecommendations = ref(false)
+    const favoriteLoading = ref(null) // 添加收藏加载状态
 
     // 新闻类型映射
     const newsTypeMap = {
@@ -274,7 +352,10 @@ export default {
         router.push({
           name: 'newsDetail',
           params: { id: news.id },
-          query: { type: currentNewsType.value }
+          query: { 
+            // 如果是搜索模式且新闻有sourceType，则使用sourceType，否则使用当前类型
+            type: isSearchMode.value && news.sourceType ? news.sourceType : currentNewsType.value 
+          }
         })
       }
     }
@@ -694,19 +775,150 @@ export default {
       fetchNewsPage(false);
     }
 
-    // 监听用户信息变化，当用户信息加载完成后获取新闻列表
-    watch(user, (newUser) => {
-      if (newUser) {
-        fetchNewsPage(false)
+    // 获取个性化推荐
+    const fetchRecommendations = async () => {
+      if (!user.value) {
+        return
       }
-    }, { immediate: true })
 
-    // 在组件挂载时，如果已经有用户信息，则获取新闻列表
+      loadingRecommendations.value = true
+      try {
+        const response = await request({
+          url: '/api/recommendation/personalized',
+          method: 'get',
+          params: {
+            limit: 12, // 从后端请求更多推荐，去重后仍能保持足够的展示数量
+            timestamp: new Date().getTime() // 添加时间戳防止缓存
+          }
+        })
+        
+        // 处理返回数据
+        if (response && response.data) {
+          const newRecommendations = Array.isArray(response.data) ? response.data : [];
+          
+          // 使用Map根据ID过滤掉重复的推荐
+          const uniqueRecommendations = [];
+          const seenIds = new Set();
+          
+          for (const news of newRecommendations) {
+            if (news.id && !seenIds.has(news.id)) {
+              seenIds.add(news.id);
+              uniqueRecommendations.push(news);
+            }
+          }
+          
+          recommendedNews.value = uniqueRecommendations;
+          
+          // 获取收藏状态
+          await fetchFavoriteStatus();
+          console.log('获取推荐成功，条数:', recommendedNews.value.length);
+        } else {
+          recommendedNews.value = [];
+          console.warn('获取推荐返回空数据');
+        }
+      } catch (error) {
+        console.error('获取推荐出错', error);
+        recommendedNews.value = [];
+        
+        if (error.response && error.response.status === 401) {
+          ElMessage.error('登录已过期，请重新登录');
+          store.dispatch('logout');
+          router.push('/login');
+        } else {
+          ElMessage.error(error.message || '获取推荐失败，请稍后重试');
+        }
+      } finally {
+        loadingRecommendations.value = false;
+      }
+    }
+
+    // 获取新闻收藏状态
+    const fetchFavoriteStatus = async () => {
+      if (!user.value || recommendedNews.value.length === 0) {
+        return;
+      }
+      
+      try {
+        const newsIds = recommendedNews.value.map(news => news.id);
+        const response = await request({
+          url: '/api/favorites/status',
+          method: 'post',
+          data: {
+            newsIds
+          }
+        });
+        
+        if (response && response.data) {
+          // 更新收藏状态
+          recommendedNews.value = recommendedNews.value.map(news => ({
+            ...news,
+            favorited: response.data.includes(news.id)
+          }));
+        }
+      } catch (error) {
+        console.error('获取收藏状态出错', error);
+      }
+    }
+
+    // 切换收藏状态
+    const toggleFavorite = async (news) => {
+      if (!user.value || !news.id) {
+        ElMessage.warning('无法执行操作，请稍后重试');
+        return;
+      }
+      
+      favoriteLoading.value = news.id;
+      
+      try {
+        if (news.favorited) {
+          // 取消收藏
+          await request({
+            url: `/api/favorites/remove/${news.id}`,
+            method: 'delete'
+          });
+          ElMessage.success('已取消收藏');
+        } else {
+          // 添加收藏
+          await request({
+            url: '/api/favorites/add',
+            method: 'post',
+            data: {
+              newsId: news.id
+            }
+          });
+          ElMessage.success('收藏成功');
+        }
+        
+        // 更新本地状态
+        news.favorited = !news.favorited;
+      } catch (error) {
+        console.error('切换收藏状态出错', error);
+        ElMessage.error(error.message || '操作失败，请稍后重试');
+      } finally {
+        favoriteLoading.value = null;
+      }
+    }
+
+    // 刷新推荐
+    const refreshRecommendations = () => {
+      fetchRecommendations()
+    }
+
+    // 在组件挂载时，如果已经有用户信息，则获取新闻列表和推荐
     onMounted(() => {
       if (user.value) {
-        fetchNewsPage(false)
+        fetchNewsList()
+        fetchRecommendations()
       }
     })
+
+    // 监听用户信息变化，当用户信息加载完成后获取新闻列表和推荐
+    watch(user, (newUser) => {
+      if (newUser) {
+        fetchNewsList()
+        fetchRecommendations()
+      }
+    }, { immediate: true })
 
     return {
       user,
@@ -743,7 +955,14 @@ export default {
       isSearchMode,
       searchCount,
       searchNews,
-      clearSearch
+      clearSearch,
+      // 推荐相关
+      recommendedNews,
+      loadingRecommendations,
+      refreshRecommendations,
+      // 收藏相关
+      toggleFavorite,
+      favoriteLoading
     }
   }
 }
@@ -762,17 +981,85 @@ export default {
 .main-content {
   flex: 1;
   transition: all 0.3s ease;
+  max-width: 100%;
 }
 
-.news-card {
-  width: 100%;
-  transition: transform 0.3s, box-shadow 0.3s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+/* 推荐区域样式 */
+.recommendation-card {
+  margin-bottom: 20px;
 }
 
-.news-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+.recommendation-icon {
+  color: #FFD700;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.recommendation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.recommendation-item {
+  flex: 1;
+  min-width: 250px;
+  max-width: calc(33.33% - 12px);
+}
+
+.recommendation-news-card {
+  transition: all 0.3s ease;
+  height: 100%;
+  cursor: pointer;
+}
+
+.recommendation-news-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.recommendation-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.recommendation-news-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.recommendation-news-content h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  line-height: 1.4;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.recommendation-news-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* 原有样式 */
+.welcome-card, .news-card {
+  margin-top: 20px;
 }
 
 .card-header {
@@ -785,6 +1072,8 @@ export default {
   margin: 0;
   font-weight: 500;
   color: #303133;
+  display: flex;
+  align-items: center;
 }
 
 .news-search {
@@ -866,12 +1155,10 @@ export default {
 .clickable-title {
   cursor: pointer;
   transition: color 0.2s;
-  position: relative;
-  display: inline-block;
 }
 
 .clickable-title:hover {
-  color: #409eff;
+  color: var(--el-color-primary);
 }
 
 .clickable-title::after {
@@ -904,6 +1191,9 @@ h4 {
   display: flex;
   flex-direction: column;
   opacity: 1;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 
 .summary-active .main-content {
@@ -913,7 +1203,25 @@ h4 {
 .summary-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  overflow-y: visible;
+  padding: 0;
+}
+
+.summary-panel .card-header {
+  background: linear-gradient(135deg, #647eff 0%, #42d392 100%);
+  color: white;
+  padding: 15px;
+  border-radius: 16px 16px 0 0;
+}
+
+.summary-panel .card-header h2 {
+  color: white;
+  margin: 0;
+  font-weight: 600;
+}
+
+.summary-panel .el-button--text {
+  color: white;
 }
 
 .summary-loading {
@@ -924,6 +1232,10 @@ h4 {
   margin-top: 10px;
   text-align: center;
   font-size: 16px;
+  background: linear-gradient(90deg, #42d392, #647eff, #d342bc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: bold;
 }
 
 .dot {
@@ -950,10 +1262,13 @@ h4 {
 }
 
 .reasoning-content {
-  background-color: #f5f7fa;
-  border-radius: 4px;
-  padding: 10px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #edf2ff 100%);
+  border-radius: 8px;
+  padding: 15px;
   margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  max-height: none;
+  overflow: visible;
 }
 
 .reasoning-header {
@@ -964,22 +1279,30 @@ h4 {
 
 .reasoning-header h4 {
   margin: 0;
-  font-size: 14px;
-  color: #606266;
+  font-size: 15px;
+  color: #647eff;
+  font-weight: 600;
 }
 
 .reasoning-text {
   margin-top: 10px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #606266;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #454655;
   white-space: pre-line;
+  max-height: none;
+  overflow: visible;
 }
 
 .summary-text {
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.8;
   color: #303133;
+  padding: 15px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fff7 100%);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  overflow: visible;
 }
 
 .summary-error {
@@ -1039,5 +1362,239 @@ h4 {
   display: flex;
   justify-content: center;
   padding: 10px 0;
+}
+
+/* 修改AI总结按钮样式，使其更加彩色现代 */
+.ai-summary-button {
+  background: linear-gradient(135deg, #42d392 0%, #647eff 100%);
+  border: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 8px 15px;
+}
+
+.ai-summary-button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(45deg);
+  transition: transform 0.6s;
+  z-index: 1;
+  opacity: 0;
+}
+
+.ai-summary-button:hover:not(:disabled)::before {
+  transform: rotate(45deg) translate(100%, 100%);
+  opacity: 1;
+}
+
+.ai-summary-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(64, 158, 255, 0.3);
+  background: linear-gradient(135deg, #35bb7f 0%, #536cdb 100%);
+}
+
+.ai-summary-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ai-button-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  z-index: 2;
+}
+
+.ai-sparkle-icon {
+  font-size: 16px;
+  display: inline-block;
+}
+
+.summary-source-info {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.summary-source-info .el-tag--success {
+  background: linear-gradient(90deg, #42d392, #647eff);
+  border: none;
+  color: white;
+  padding: 5px 10px;
+}
+
+.summary-title {
+  color: #303133;
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-icon {
+  background: white;
+  color: #647eff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+}
+
+.ai-thinking-animation {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.thinking-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: thinking 1.8s infinite ease-in-out;
+}
+
+.c1 {
+  background-color: #42d392;
+  animation-delay: 0s;
+}
+
+.c2 {
+  background-color: #647eff;
+  animation-delay: 0.2s;
+}
+
+.c3 {
+  background-color: #d342bc;
+  animation-delay: 0.4s;
+}
+
+@keyframes thinking {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.reasoning-title, .summary-text-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reasoning-icon, .summary-icon, .connection-icon {
+  font-size: 18px;
+}
+
+.summary-text-header {
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(66, 211, 146, 0.2);
+  color: #647eff;
+  font-weight: 600;
+}
+
+.summary-text-content {
+  padding-top: 5px;
+}
+
+.source-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(90deg, #42d392, #647eff);
+  border: none;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 15px;
+  box-shadow: 0 2px 6px rgba(66, 211, 146, 0.3);
+}
+
+.sparkle {
+  font-size: 18px;
+}
+
+.toggle-button {
+  padding: 6px 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(100, 126, 255, 0.2);
+  font-weight: bold;
+}
+
+.summary-panel .card-header {
+  border-radius: 16px 16px 0 0;
+}
+
+.summary-panel:deep(.el-card__body) {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding: 20px;
+  border-radius: 0 0 16px 16px !important;
+  background-color: white;
+}
+
+.summary-result {
+  margin-top: 20px;
+  overflow: visible;
+}
+
+/* 确保el-card有圆角 */
+.summary-panel:deep(.el-card) {
+  border-radius: 16px !important;
+  overflow: hidden;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.summary-panel:deep(.el-card__header) {
+  border-radius: 16px 16px 0 0 !important;
+  border-bottom: none;
+  padding: 0;
+}
+
+.summary-panel:deep(.el-card__body) {
+  padding: 20px;
+  border-radius: 0 0 16px 16px !important;
+  background-color: white;
+}
+
+/* 确保思考过程和摘要内容都能完整显示 */
+.reasoning-text {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #454655;
+  white-space: pre-line;
+  max-height: none;
+  overflow: visible;
+}
+
+.summary-result {
+  margin-top: 20px;
 }
 </style>

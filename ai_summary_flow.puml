@@ -1,0 +1,43 @@
+@startuml AI总结功能流程
+
+actor 用户
+participant "前端界面" as Frontend
+participant "后端服务" as Backend
+participant "DeepSeek AI API" as AI
+database "数据库" as DB
+
+用户 -> Frontend: 点击AI总结按钮
+activate Frontend
+
+Frontend -> Backend: 发送总结请求
+activate Backend
+note right of Backend: 无需token验证
+
+Backend -> DB: 获取内容数据
+activate DB
+DB --> Backend: 返回内容
+deactivate DB
+
+Backend -> AI: 调用DeepSeek API (deepseek-reasoner模型)
+activate AI
+note right of AI: 使用改进的提示词\n要求150字以内的总结\n使用用户的语言
+
+alt 正常流程
+    AI --> Backend: 返回AI生成的总结
+else API超时或失败
+    AI --> Backend: 连接超时/错误
+    Backend -> Backend: 本地生成简单总结作为备选
+end
+deactivate AI
+
+Backend -> Backend: 内容验证\n(检测是否返回原始文本)
+
+Backend --> Frontend: 通过SSE发送总结结果
+deactivate Backend
+
+Frontend -> Frontend: 使用渐变色和现代样式\n渲染AI总结面板
+Frontend --> 用户: 显示彩色总结结果
+
+deactivate Frontend
+
+@enduml 

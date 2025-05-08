@@ -417,6 +417,8 @@ public class NewsServiceImpl implements NewsService {
                 // 过滤掉标题重复的结果
                 for (News news : tableResults) {
                     if (news.getTitle() != null && !processedTitles.contains(news.getTitle())) {
+                        // 设置新闻来源表，用于前端跳转
+                        news.setSourceType(tableName);
                         results.add(news);
                         processedTitles.add(news.getTitle());
                     }
@@ -465,8 +467,8 @@ public class NewsServiceImpl implements NewsService {
         int offset = (pageNum - 1) * pageSize;
         
         // 从所有新闻表中搜索
+        List<News> allResults = new java.util.ArrayList<>(); // 保存所有搜索结果用于计算总记录数
         List<News> records = new java.util.ArrayList<>();
-        long totalCount = 0;
         HashMap<String, String> tableMap = urlMatchSqlUtil.getUrls();
         
         // 用于跟踪已处理的标题，避免重复
@@ -475,15 +477,19 @@ public class NewsServiceImpl implements NewsService {
         // 遍历所有新闻表
         for (String tableName : tableMap.keySet()) {
             try {
-                // 统计当前表中的匹配记录数
-                totalCount += newsMapper.countSearchResults(tableName, query);
+                // 在当前表中搜索
+                List<News> tableResults = newsMapper.searchNewsByTitle(tableName, query);
                 
-                // 在当前表中分页搜索
-                List<News> tableResults = newsMapper.searchNewsPageByTitle(tableName, query, offset, pageSize);
+                // 添加到所有结果集（带重复项）
+                if (tableResults != null && !tableResults.isEmpty()) {
+                    allResults.addAll(tableResults);
+                }
                 
                 // 过滤掉标题重复的结果
                 for (News news : tableResults) {
                     if (news.getTitle() != null && !processedTitles.contains(news.getTitle())) {
+                        // 设置新闻来源表，用于前端跳转
+                        news.setSourceType(tableName);
                         records.add(news);
                         processedTitles.add(news.getTitle());
                     }
@@ -505,11 +511,20 @@ public class NewsServiceImpl implements NewsService {
         }
         
         // 由于是跨表分页，可能返回的结果数超过了pageSize，需要进行修剪
+        List<News> pagedRecords = records;
         if (records.size() > pageSize) {
-            records = records.subList(0, pageSize);
+            int endIndex = Math.min(offset + pageSize, records.size());
+            if (offset < records.size()) {
+                pagedRecords = records.subList(offset, endIndex);
+            } else {
+                pagedRecords = Collections.emptyList();
+            }
         }
         
-        return new PageResult<>(records, totalCount, pageNum, pageSize);
+        // 使用去重后的总数作为total
+        long totalCount = records.size();
+        
+        return new PageResult<>(pagedRecords, totalCount, pageNum, pageSize);
     }
 
     /**
